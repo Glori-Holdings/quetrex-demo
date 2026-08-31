@@ -1,0 +1,36 @@
+{
+  "enabledPlugins": {
+    "quetrex@quetrex": true,
+    "quetrex-factory@quetrex": true,
+    "quetrex-setup@quetrex": true
+  },
+  "extraKnownMarketplaces": {
+    "quetrex": {
+      "source": {
+        "source": "github",
+        "repo": "Glori-Holdings/quetrex-plugins"
+      },
+      "autoUpdate": true
+    }
+  },
+  "statusLine": {
+    "type": "command",
+    "command": "bash \"${CLAUDE_PROJECT_DIR:-.}/.claude/statusline-command.sh\""
+  },
+  "permissions": {
+    "allow": [
+      "Bash(git push:*)",
+      "Bash(gh pr:*)",
+      "Bash(git worktree:*)",
+      "Bash(git checkout:*)",
+      "Bash(git merge:*)",
+      "Bash(git diff:*)",
+      "Bash(git rev-parse:*)",
+      "Bash(git add:*)",
+      "Bash(git commit:*)",
+      "Bash(jq:*)",
+      "Bash(mkdir:*)",
+      "Edit(/**)"
+    ]
+  }
+}
