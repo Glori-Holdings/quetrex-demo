@@ -1,0 +1,6 @@
+# Git-ignored paths every worktree needs. Listing a path here does NOT commit it.
+# NOTE: the harness applies this to the worktrees IT creates; a manual
+# `git worktree add` must copy these itself (see the worktree-workflow skill).
+.env
+.env.local
+.claude/settings.local.json
