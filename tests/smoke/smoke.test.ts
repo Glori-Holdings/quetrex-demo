@@ -625,3 +625,111 @@ test("AC16: src/app contains no placeholder markers", async () => {
     }
   }
 });
+
+// ---------------------------------------------------------------------------
+// Adversarial (security_review_required): stored fields (title, note, tag)
+// must never be rendered back into the page as executable HTML. This is a
+// real-HTTP round trip through the Server Action and the rendered list page —
+// no unit test exercises the actual render path, only these framework-level
+// assertions can catch a future dangerouslySetInnerHTML/raw-interpolation
+// regression.
+// ---------------------------------------------------------------------------
+
+test("SECURITY: title, note, and tag containing HTML/script payloads are rendered inert, not executable", async () => {
+  await resetStore();
+
+  const { html: formHtml } = await getMain("/");
+  const payloadTitle = "<script>alert(1)</script>";
+  const payloadNote = '"><img src=x onerror=alert(2)>';
+  const payloadTag = "<b>bold-tag</b>";
+
+  const res = await submitForm("/", formHtml, 'class="form"', {
+    url: "https://example.com/xss-check",
+    title: payloadTitle,
+    note: payloadNote,
+    tags: payloadTag,
+  });
+  assert.ok([200, 303].includes(res.status), "add: expected 200 or 303");
+
+  const { main } = await getMain("/");
+
+  assert.equal(
+    main.includes("<script>alert(1)</script>"),
+    false,
+    "raw <script> tag must never appear unescaped in the rendered page",
+  );
+  assert.equal(
+    main.includes("<img src=x onerror=alert(2)>"),
+    false,
+    "raw onerror-bearing <img> must never appear unescaped in the rendered page",
+  );
+  assert.equal(
+    main.includes("<b>bold-tag</b>"),
+    false,
+    "a tag value must never be rendered as raw, executable/formatting HTML",
+  );
+  // The payload's text content must still be present, just neutralized
+  // (HTML-entity-escaped by the framework's default text-node rendering).
+  assert.ok(
+    main.includes("&lt;script&gt;") || !main.includes(payloadTitle),
+    "escaped or otherwise neutralized script payload expected in output",
+  );
+
+  const stored = await readStore();
+  const record = stored.find((l) => l.url === "https://example.com/xss-check");
+  assert.ok(record, "the record should still be persisted with its raw text");
+  assert.equal(
+    record.title,
+    payloadTitle,
+    "raw text is stored as-is (escaping is a render-time concern)",
+  );
+});
+
+// ---------------------------------------------------------------------------
+// Adversarial (security_review_required): the javascript:/data:/file: scheme
+// rejection is unit-tested against validateLinkInput() directly, but never
+// proven against the real Server Action over real HTTP — this closes that
+// gap and additionally proves no dangerous-scheme href is ever persisted or
+// rendered as a clickable anchor.
+// ---------------------------------------------------------------------------
+
+test("SECURITY: dangerous URL schemes are rejected by the real Server Action over HTTP and never persisted or linked", async () => {
+  await resetStore();
+
+  const dangerous = [
+    ["javascript:alert(1)", "javascript"],
+    ["data:text/html,<script>alert(1)</script>", "data"],
+    ["file:///etc/passwd", "file"],
+  ] as const;
+
+  for (const [url, scheme] of dangerous) {
+    const { html } = await getMain("/");
+    const res = await submitForm("/", html, 'class="form"', {
+      url,
+      title: `Dangerous ${scheme}`,
+      note: "",
+      tags: "",
+    });
+    assert.equal(res.status, 200, `${scheme}: expected final status 200`);
+    const main = extractMain(await res.text());
+
+    const errorMatch = /class="form-error"[^>]*>([^<]*)</.exec(main);
+    assert.ok(errorMatch, `${scheme}: expected a rendered error message`);
+    assert.ok(
+      (errorMatch[1] as string).trim().length > 0,
+      `${scheme}: error message should be non-empty`,
+    );
+    assert.equal(
+      main.includes(`href="${url}"`),
+      false,
+      `${scheme}: no clickable anchor for a dangerous-scheme URL should ever render`,
+    );
+  }
+
+  const stored = await readStore();
+  assert.equal(
+    stored.length,
+    0,
+    "no dangerous-scheme submission should persist a record",
+  );
+});

@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { mkdtemp, rm } from "node:fs/promises";
+import { mkdtemp, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { createStore } from "../../src/lib/store.ts";
@@ -93,5 +93,62 @@ test("archive hides a link from the default list and reveals it in the archived 
       5,
       "count unchanged after failed archive",
     );
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Adversarial: security_surface item "a corrupt or non-conforming store file
+// is rejected rather than trusted." This path (readAll's shape guard) was
+// unexercised by the rest of the suite per node's own coverage report.
+// ---------------------------------------------------------------------------
+
+test("a store file that is valid JSON but not an array of Links is rejected, not silently trusted", async () => {
+  await withTempStore(async (dataFile) => {
+    await writeFile(
+      dataFile,
+      JSON.stringify({ not: "an array of links" }),
+      "utf8",
+    );
+
+    const store = createStore({
+      filePath: dataFile,
+      now: () => "2024-01-01T00:00:00.000Z",
+      nextId: () => "id-0",
+    });
+
+    await assert.rejects(() => store.all(), /corrupt/i);
+    await assert.rejects(() => store.list(), /corrupt/i);
+  });
+});
+
+test("a store file with a malformed link shape (missing required fields) is rejected", async () => {
+  await withTempStore(async (dataFile) => {
+    await writeFile(
+      dataFile,
+      JSON.stringify([{ id: "x", url: "https://example.com/a" }]),
+      "utf8",
+    );
+
+    const store = createStore({
+      filePath: dataFile,
+      now: () => "2024-01-01T00:00:00.000Z",
+      nextId: () => "id-0",
+    });
+
+    await assert.rejects(() => store.all(), /corrupt/i);
+  });
+});
+
+test("a store file that is not valid JSON at all is rejected rather than trusted", async () => {
+  await withTempStore(async (dataFile) => {
+    await writeFile(dataFile, "{ not valid json", "utf8");
+
+    const store = createStore({
+      filePath: dataFile,
+      now: () => "2024-01-01T00:00:00.000Z",
+      nextId: () => "id-0",
+    });
+
+    await assert.rejects(() => store.all());
   });
 });
