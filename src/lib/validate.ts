@@ -5,7 +5,7 @@ const ALLOWED_SCHEMES = new Set(["http:", "https:"]);
 const MAX_URL_LENGTH = 2000;
 const MAX_TITLE_LENGTH = 120;
 const MAX_NOTE_LENGTH = 1000;
-const MAX_TAGS = 8;
+export const MAX_TAGS = 8;
 const MAX_TAG_LENGTH = 30;
 
 export type ValidationResult = Result<LinkFields>;

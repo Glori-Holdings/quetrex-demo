@@ -2,9 +2,9 @@ const UTM_PREFIX = "utm_";
 
 /**
  * Normalizes a URL for storage and dedupe comparison: lowercases the scheme
- * and host, strips a single trailing slash from the path (root becomes
- * empty), removes every utm_* query parameter while preserving the order of
- * the rest, and leaves the hash untouched.
+ * and host, strips all trailing slashes from the path (root becomes empty),
+ * removes every utm_* query parameter while preserving the order of the
+ * rest, and leaves the hash untouched.
  */
 export function normalizeUrl(input: string): string {
   const parsed = new URL(input);

@@ -1,4 +1,5 @@
 import type { Link, LinkFields } from "./types.ts";
+import { MAX_TAGS } from "./validate.ts";
 
 export interface UpsertResult {
   merged: boolean;
@@ -24,6 +25,7 @@ export function upsertLink(
 
   const tags = [...match.tags];
   for (const tag of candidate.tags) {
+    if (tags.length >= MAX_TAGS) break;
     if (!tags.includes(tag)) tags.push(tag);
   }
 

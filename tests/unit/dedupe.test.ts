@@ -4,6 +4,7 @@ import { mkdtemp, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { createStore } from "../../src/lib/store.ts";
+import { MAX_TAGS } from "../../src/lib/validate.ts";
 
 async function withTempStore(
   fn: (dataFile: string) => Promise<void>,
@@ -103,6 +104,40 @@ test("re-adding the URL of an archived link un-archives it and it becomes visibl
       visible[0]?.id,
       added.value.id,
       "0 new ids allocated on merge",
+    );
+  });
+});
+
+test("repeated re-adds with fresh tags never grow the merged tags array past MAX_TAGS", async () => {
+  await withTempStore(async (dataFile) => {
+    let counter = 0;
+    const store = createStore({
+      filePath: dataFile,
+      now: () => "2024-01-01T00:00:00.000Z",
+      nextId: () => `id-${counter++}`,
+    });
+
+    for (let round = 0; round < 12; round++) {
+      const tags = Array.from({ length: 8 }, (_, i) => `round${round}-tag${i}`);
+      const result = await store.add({
+        url: "https://example.com/capped",
+        title: "Capped",
+        tags,
+      });
+      assert.equal(result.ok, true);
+      if (!result.ok) return;
+      assert.ok(
+        result.value.tags.length <= MAX_TAGS,
+        `tags.length (${result.value.tags.length}) exceeds MAX_TAGS after round ${round}`,
+      );
+    }
+
+    const all = await store.all();
+    assert.equal(all.length, 1, "still exactly 1 record after 12 re-adds");
+    assert.equal(
+      all[0]?.tags.length,
+      MAX_TAGS,
+      "final tags length is exactly MAX_TAGS",
     );
   });
 });
