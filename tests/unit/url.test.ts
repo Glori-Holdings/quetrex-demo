@@ -55,3 +55,15 @@ test("normalizeUrl is idempotent for every case", () => {
     assert.equal(normalizeUrl(once), once, `not idempotent: ${input}`);
   }
 });
+
+test("normalizeUrl strips ALL trailing slashes, not just one", () => {
+  const multi = normalizeUrl("https://example.com/blog//");
+  const single = normalizeUrl("https://example.com/blog/");
+  assert.equal(multi, "https://example.com/blog");
+  assert.equal(
+    multi,
+    single,
+    "multi- and single-trailing-slash forms normalize identically",
+  );
+  assert.equal(normalizeUrl(multi), multi, "not idempotent");
+});

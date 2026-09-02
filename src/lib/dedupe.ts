@@ -8,7 +8,8 @@ export interface UpsertResult {
 /**
  * Finds an existing link with the same normalized URL. If found, returns the
  * existing record with its tags unioned with the candidate's tags (0
- * duplicates, no new id allocated). Otherwise creates a new record via
+ * duplicates, no new id allocated) and un-archived — re-adding a URL is an
+ * explicit signal to re-surface it. Otherwise creates a new record via
  * `makeNew`.
  */
 export function upsertLink(
@@ -26,5 +27,5 @@ export function upsertLink(
     if (!tags.includes(tag)) tags.push(tag);
   }
 
-  return { merged: true, link: { ...match, tags } };
+  return { merged: true, link: { ...match, tags, archived: false } };
 }

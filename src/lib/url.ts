@@ -12,8 +12,8 @@ export function normalizeUrl(input: string): string {
   let pathname = parsed.pathname;
   if (pathname === "/") {
     pathname = "";
-  } else if (pathname.endsWith("/")) {
-    pathname = pathname.slice(0, -1);
+  } else {
+    pathname = pathname.replace(/\/+$/, "");
   }
 
   const kept = new URLSearchParams();
