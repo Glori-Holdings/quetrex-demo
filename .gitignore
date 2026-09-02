@@ -3,6 +3,7 @@ node_modules/
 out/
 dist/
 build/
+*.tsbuildinfo
 
 # Local JSON store — created at runtime, never committed.
 .data/
@@ -12,5 +13,10 @@ build/
 !.env.example
 
 .claude/settings.local.json
+.claude/worktrees/
 *.log
 .DS_Store
+
+# Quetrex pipeline gate artifacts — evidence only, published via a
+# dedicated gates branch (git add -f), never committed to the unit branch.
+.quetrex/
