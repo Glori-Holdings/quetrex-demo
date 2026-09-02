@@ -1,7 +1,17 @@
 import tseslint from "typescript-eslint";
 
 export default tseslint.config(
-  { ignores: ["node_modules/**", ".next/**", "out/**", "build/**", "dist/**"] },
+  {
+    ignores: [
+      "node_modules/**",
+      ".next/**",
+      "out/**",
+      "build/**",
+      "dist/**",
+      ".claude/worktrees/**",
+      ".quetrex/**",
+    ],
+  },
   ...tseslint.configs.recommended,
   {
     languageOptions: {
