@@ -3,6 +3,7 @@ node_modules/
 out/
 dist/
 build/
+*.tsbuildinfo
 
 # Local JSON store — created at runtime, never committed.
 .data/
